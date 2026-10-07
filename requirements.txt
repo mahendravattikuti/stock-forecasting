@@ -1,0 +1,28 @@
+# Core Data Processing
+numpy==1.24.3
+pandas==2.0.3
+scipy==1.11.2
+
+# Machine Learning & Deep Learning
+scikit-learn==1.2.2
+statsmodels==0.14.0
+tensorflow==2.13.0
+
+# Signal Processing & Wavelets
+PyWavelets==1.4.1
+
+# Data Acquisition
+python-dotenv==1.0.0
+requests==2.31.0
+yfinance==0.2.28
+
+# Visualization (optional, for dashboards)
+matplotlib==3.7.2
+plotly==5.14.0
+
+# Development & Testing
+hypothesis==6.81.1
+ipython==8.14.0
+jupyter==1.0.0
+pytest==7.4.0
+pytest-cov==4.1.0
