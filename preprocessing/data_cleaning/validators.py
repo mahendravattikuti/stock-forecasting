@@ -2,13 +2,16 @@
 Validation rules for OHLCV data quality assurance.
 
 Validates OHLC relationships, price bounds, and data integrity.
+Includes quality assurance, reporting, and symbol exclusion management.
 """
 
 import pandas as pd
 import numpy as np
-from typing import List, Dict, Any, Tuple
-from dataclasses import dataclass
+from typing import List, Dict, Any, Tuple, Set
+from dataclasses import dataclass, field
+from datetime import datetime
 import logging
+import json
 
 
 @dataclass
@@ -390,3 +393,243 @@ class DataQualityValidator:
             ))
         
         return stasis_ranges
+
+
+
+class ValidationReportGenerator:
+    """
+    Generates comprehensive validation reports for data quality assurance.
+    
+    Creates validation_report.json documenting pass/fail status per symbol,
+    completeness metrics, excluded symbols, and manual review flags.
+    
+    Examples
+    --------
+    >>> generator = ValidationReportGenerator(logger=logger)
+    >>> report = generator.generate_validation_report(
+    ...     validation_results, excluded_symbols, output_path
+    ... )
+    """
+    
+    def __init__(self, logger: logging.Logger = None):
+        """
+        Initialize ValidationReportGenerator.
+        
+        Parameters
+        ----------
+        logger : logging.Logger, optional
+            Logger instance for diagnostic output
+        """
+        self.logger = logger or logging.getLogger(__name__)
+    
+    def generate_validation_report(
+        self,
+        validation_results: Dict[str, Dict[str, Any]],
+        excluded_symbols: Dict[str, str],
+        output_path: str = "results/validation_report.json"
+    ) -> Dict[str, Any]:
+        """
+        Generate comprehensive validation report.
+        
+        Parameters
+        ----------
+        validation_results : Dict[str, Dict[str, Any]]
+            Results from DataQualityValidator.validate_quality() per symbol
+        excluded_symbols : Dict[str, str]
+            Dictionary mapping excluded symbol to exclusion reason
+        output_path : str
+            Path to write validation_report.json
+        
+        Returns
+        -------
+        Dict[str, Any]
+            Validation report with pass/fail per symbol, completeness %, excluded symbols
+        """
+        report = {
+            'report_timestamp': datetime.utcnow().isoformat() + 'Z',
+            'summary': {
+                'total_symbols': len(validation_results) + len(excluded_symbols),
+                'symbols_passed': 0,
+                'symbols_excluded': len(excluded_symbols),
+                'symbols_manual_review': 0
+            },
+            'symbols': {},
+            'excluded_symbols': {},
+            'manual_review_flags': []
+        }
+        
+        # Process validation results
+        for symbol, result in validation_results.items():
+            overall_pass = result.get('overall_pass', False)
+            
+            if overall_pass:
+                report['summary']['symbols_passed'] += 1
+            else:
+                report['summary']['symbols_manual_review'] += 1
+                report['manual_review_flags'].append({
+                    'symbol': symbol,
+                    'reason': 'failed validation checks',
+                    'details': result.get('checks', {})
+                })
+            
+            # Extract completeness percentage
+            ohlc_check = result.get('checks', {}).get('ohlc_relationships', {})
+            completeness_pct = 0.0
+            if 'actual' in ohlc_check:
+                # Parse percentage string like "99.50%"
+                pct_str = ohlc_check['actual']
+                if isinstance(pct_str, str) and '%' in pct_str:
+                    completeness_pct = float(pct_str.replace('%', ''))
+            
+            report['symbols'][symbol] = {
+                'pass': overall_pass,
+                'completeness_percent': completeness_pct,
+                'checks': result.get('checks', {})
+            }
+        
+        # Process excluded symbols
+        for symbol, reason in excluded_symbols.items():
+            report['excluded_symbols'][symbol] = reason
+        
+        # Write report to file
+        try:
+            with open(output_path, 'w') as f:
+                json.dump(report, f, indent=2)
+            self.logger.info(f"Validation report written to {output_path}")
+        except Exception as e:
+            self.logger.error(f"Failed to write validation report: {e}")
+            raise
+        
+        return report
+
+
+class SymbolExclusionManager:
+    """
+    Manages symbol exclusion with logging and summary generation.
+    
+    Tracks excluded symbols, logs exclusion reasons with dates,
+    and generates exclusion_summary.json for audit purposes.
+    
+    Examples
+    --------
+    >>> manager = SymbolExclusionManager(logger=logger)
+    >>> manager.exclude_symbol("AAPL", "insufficient_data")
+    >>> summary = manager.generate_exclusion_summary()
+    """
+    
+    def __init__(self, logger: logging.Logger = None):
+        """
+        Initialize SymbolExclusionManager.
+        
+        Parameters
+        ----------
+        logger : logging.Logger, optional
+            Logger instance for diagnostic output
+        """
+        self.logger = logger or logging.getLogger(__name__)
+        self.excluded_symbols: Dict[str, Dict[str, Any]] = {}
+    
+    def exclude_symbol(
+        self,
+        symbol: str,
+        reason: str,
+        exclusion_date: str = None,
+        details: Dict[str, Any] = None
+    ) -> None:
+        """
+        Record exclusion of a symbol with reason and date.
+        
+        Parameters
+        ----------
+        symbol : str
+            Stock symbol to exclude
+        reason : str
+            Reason for exclusion (e.g., 'insufficient_data', 'invalid_ohlc', etc.)
+        exclusion_date : str, optional
+            Date of exclusion (ISO format); defaults to current date
+        details : Dict[str, Any], optional
+            Additional details about exclusion (e.g., actual data points, threshold)
+        """
+        if exclusion_date is None:
+            exclusion_date = datetime.utcnow().strftime("%Y-%m-%d")
+        
+        self.excluded_symbols[symbol] = {
+            'reason': reason,
+            'exclusion_date': exclusion_date,
+            'details': details or {}
+        }
+        
+        self.logger.info(f"Excluded symbol {symbol}: {reason}")
+    
+    def get_excluded_symbols(self) -> Dict[str, str]:
+        """
+        Get all excluded symbols with reasons.
+        
+        Returns
+        -------
+        Dict[str, str]
+            Dictionary mapping symbol to exclusion reason
+        """
+        return {
+            symbol: data['reason']
+            for symbol, data in self.excluded_symbols.items()
+        }
+    
+    def is_excluded(self, symbol: str) -> bool:
+        """
+        Check if a symbol is excluded.
+        
+        Parameters
+        ----------
+        symbol : str
+            Stock symbol to check
+        
+        Returns
+        -------
+        bool
+            True if symbol is excluded, False otherwise
+        """
+        return symbol in self.excluded_symbols
+    
+    def generate_exclusion_summary(
+        self,
+        output_path: str = "results/exclusion_summary.json"
+    ) -> Dict[str, Any]:
+        """
+        Generate JSON summary of all excluded symbols and reasons.
+        
+        Parameters
+        ----------
+        output_path : str
+            Path to write exclusion_summary.json
+        
+        Returns
+        -------
+        Dict[str, Any]
+            Summary of exclusions organized by reason
+        """
+        # Organize exclusions by reason
+        by_reason: Dict[str, List[str]] = {}
+        for symbol, data in self.excluded_symbols.items():
+            reason = data['reason']
+            if reason not in by_reason:
+                by_reason[reason] = []
+            by_reason[reason].append(symbol)
+        
+        summary = {
+            'summary_timestamp': datetime.utcnow().isoformat() + 'Z',
+            'total_excluded': len(self.excluded_symbols),
+            'excluded_by_reason': by_reason,
+            'detailed_exclusions': self.excluded_symbols
+        }
+        
+        # Write summary to file
+        try:
+            with open(output_path, 'w') as f:
+                json.dump(summary, f, indent=2)
+            self.logger.info(f"Exclusion summary written to {output_path}")
+        except Exception as e:
+            self.logger.error(f"Failed to write exclusion summary: {e}")
+            raise
+        
+        return summary
