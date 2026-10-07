@@ -9,7 +9,7 @@ statsmodels==0.14.0
 tensorflow==2.13.0
 
 # Signal Processing & Wavelets
-PyWavelets==1.4.1
+PyWavelets==1.10.0
 
 # Data Acquisition
 python-dotenv==1.0.0
