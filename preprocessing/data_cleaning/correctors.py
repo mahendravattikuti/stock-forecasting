@@ -11,6 +11,8 @@ from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 import logging
 
+from .detectors import PriceSpike
+
 
 @dataclass
 class Correction:
@@ -292,7 +294,7 @@ class ForwardFillCorrector:
             return df_corrected
         
         if self.volume_strategy == 'forward_fill':
-            df_corrected['Volume'].fillna(method='ffill', inplace=True)
+            df_corrected['Volume'] = df_corrected['Volume'].ffill()
         elif self.volume_strategy == 'median':
             # Use rolling median of ±5 days
             window_size = 5
@@ -455,7 +457,7 @@ class OHLCCorrector:
         if c < l:
             violations.append('close_lt_low')
         
-        if l < o:
+        if o < l:
             violations.append('low_lt_open')
         
         if h < o:

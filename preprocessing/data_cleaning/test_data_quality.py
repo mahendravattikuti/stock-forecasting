@@ -14,7 +14,7 @@ import os
 from datetime import datetime, timedelta
 import logging
 
-from validators import (
+from preprocessing.data_cleaning.validators import (
     DataQualityValidator,
     ValidationReportGenerator,
     SymbolExclusionManager,

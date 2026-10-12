@@ -8,7 +8,7 @@ import pytest
 import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
-from correctors import (
+from preprocessing.data_cleaning.correctors import (
     ForwardFillCorrector,
     OHLCCorrector,
     SpikeCorrector,
@@ -418,7 +418,7 @@ class TestEdgeCases:
         corrected_df, corrections = corrector.correct_missing_values(df)
         
         # Last row NaN should be forward-filled from previous row
-        assert not corrected_df.iloc[-1]['Close'].isna()
+        assert not pd.isna(corrected_df.iloc[-1]['Close'])
     
     def test_zero_spikes_list(self, sample_ohlcv_df):
         """Test SpikeCorrector with empty spikes list."""

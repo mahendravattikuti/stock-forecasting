@@ -1,0 +1,45 @@
+{
+  "name": "phase_15_default",
+  "feature_groups": {
+    "full_feature_set": {
+      "columns": [],
+      "description": "Full feature set baseline"
+    },
+    "remove_rsi": {
+      "columns": ["rsi_14", "rsi_9", "rsi_21"],
+      "description": "Remove RSI-based momentum features"
+    },
+    "remove_macd": {
+      "columns": ["macd_line", "macd_signal", "macd_histogram"],
+      "description": "Remove MACD family features"
+    },
+    "remove_bollinger": {
+      "columns": ["bollinger_upper", "bollinger_lower", "bollinger_bandwidth"],
+      "description": "Remove Bollinger band features"
+    },
+    "remove_tier2": {
+      "columns": ["rsi_14", "macd_line", "macd_signal", "bollinger_upper", "bollinger_lower", "stochastic_k", "atr_14", "adx_14", "obv", "momentum", "volatility"],
+      "description": "Remove all Tier-2 technical indicators"
+    },
+    "remove_tier3": {
+      "columns": ["market_regime", "sector_momentum", "market_beta", "cross_asset_correlation"],
+      "description": "Remove Tier-3 market context features"
+    },
+    "remove_wavelet": {
+      "columns": ["wavelet_approximation", "wavelet_detail", "wavelet_energy"],
+      "description": "Remove wavelet decomposition features"
+    },
+    "remove_ssa": {
+      "columns": ["ssa_component_1", "ssa_component_2", "ssa_reconstruction"],
+      "description": "Remove SSA signal processing features"
+    },
+    "remove_kalman": {
+      "columns": ["kalman_state", "kalman_smoothed", "kalman_gain"],
+      "description": "Remove Kalman-filtered features"
+    },
+    "remove_signal_processing": {
+      "columns": ["wavelet_approximation", "wavelet_detail", "wavelet_energy", "ssa_component_1", "ssa_component_2", "ssa_reconstruction", "kalman_state", "kalman_smoothed", "kalman_gain"],
+      "description": "Remove all signal-processing features"
+    }
+  }
+}

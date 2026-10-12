@@ -248,10 +248,13 @@ class DataCleaner:
         
         # Step 2: Correction - Forward fill
         self.logger.debug("Step 2a: Applying forward-fill corrections")
+        rows_before_ff = len(cleaned_df)
         cleaned_df, ff_corrections = self.forward_fill_corrector.correct_missing_values(
             cleaned_df
         )
+        rows_after_ff = len(cleaned_df)
         report.forward_fills_applied = len(ff_corrections)
+        report.rows_excluded += rows_before_ff - rows_after_ff
         report.forward_fill_log = [
             {
                 'start_date': str(ffr.start_date.date()),

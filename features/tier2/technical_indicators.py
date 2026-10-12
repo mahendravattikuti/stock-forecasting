@@ -14,22 +14,21 @@ from features.base_features import FeatureModule
 
 
 class RSIFeature(FeatureModule):
-    """Relative Strength Index (14-period) - Momentum oscillator (0-100)."""
+    """Relative Strength Index - Momentum oscillator (0-100)."""
     
     def __init__(self, config: Optional[dict] = None, logger: Optional[logging.Logger] = None):
         super().__init__(name='rsi_14', tier=2, config=config, logger=logger)
-        self.period = 14
+        cfg = config or {}
+        self.period = int(cfg.get('rsi_period', cfg.get('period', 14)))
     
     def compute(self, df: pd.DataFrame, fit_data: Optional[pd.DataFrame] = None) -> pd.DataFrame:
         self._validate_input_dataframe(df)
         close = df['Close'].astype(float)
         
-        # Calculate price changes and gains/losses
         deltas = close.diff()
         gains = deltas.clip(lower=0)
         losses = -deltas.clip(upper=0)
         
-        # EMA smoothing
         avg_gains = gains.ewm(span=self.period, adjust=False).mean()
         avg_losses = losses.ewm(span=self.period, adjust=False).mean()
         
@@ -57,19 +56,23 @@ class RSIFeature(FeatureModule):
 
 
 class MACDFeature(FeatureModule):
-    """MACD (12,26,9) with signal line and histogram."""
+    """MACD with signal line and histogram."""
     
     def __init__(self, config: Optional[dict] = None, logger: Optional[logging.Logger] = None):
         super().__init__(name='macd', tier=2, config=config, logger=logger)
+        cfg = config or {}
+        self.fast_period = int(cfg.get('macd_fast', 12))
+        self.slow_period = int(cfg.get('macd_slow', 26))
+        self.signal_period = int(cfg.get('macd_signal', 9))
     
     def compute(self, df: pd.DataFrame, fit_data: Optional[pd.DataFrame] = None) -> pd.DataFrame:
         self._validate_input_dataframe(df)
         close = df['Close'].astype(float)
         
-        ema12 = close.ewm(span=12, adjust=False).mean()
-        ema26 = close.ewm(span=26, adjust=False).mean()
-        macd_line = ema12 - ema26
-        macd_signal = macd_line.ewm(span=9, adjust=False).mean()
+        ema_fast = close.ewm(span=self.fast_period, adjust=False).mean()
+        ema_slow = close.ewm(span=self.slow_period, adjust=False).mean()
+        macd_line = ema_fast - ema_slow
+        macd_signal = macd_line.ewm(span=self.signal_period, adjust=False).mean()
         macd_histogram = macd_line - macd_signal
         
         result = pd.DataFrame({
@@ -93,19 +96,22 @@ class MACDFeature(FeatureModule):
 
 
 class BollingerBandsFeature(FeatureModule):
-    """Bollinger Bands (20, 2.0 std dev) - Volatility bands."""
+    """Bollinger Bands - Volatility bands."""
     
     def __init__(self, config: Optional[dict] = None, logger: Optional[logging.Logger] = None):
         super().__init__(name='bollinger_bands', tier=2, config=config, logger=logger)
+        cfg = config or {}
+        self.period = int(cfg.get('bb_period', cfg.get('period', 20)))
+        self.num_std = float(cfg.get('bb_std', 2.0))
     
     def compute(self, df: pd.DataFrame, fit_data: Optional[pd.DataFrame] = None) -> pd.DataFrame:
         self._validate_input_dataframe(df)
         close = df['Close'].astype(float)
         
-        middle = close.rolling(window=20).mean()
-        std = close.rolling(window=20).std()
-        upper = middle + (2.0 * std)
-        lower = middle - (2.0 * std)
+        middle = close.rolling(window=self.period).mean()
+        std = close.rolling(window=self.period).std()
+        upper = middle + (self.num_std * std)
+        lower = middle - (self.num_std * std)
         width = upper - lower
         
         result = pd.DataFrame({
@@ -130,10 +136,13 @@ class BollingerBandsFeature(FeatureModule):
 
 
 class StochasticFeature(FeatureModule):
-    """Stochastic Oscillator (14) - %K and %D (0-100)."""
+    """Stochastic Oscillator - %K and %D (0-100)."""
     
     def __init__(self, config: Optional[dict] = None, logger: Optional[logging.Logger] = None):
         super().__init__(name='stochastic', tier=2, config=config, logger=logger)
+        cfg = config or {}
+        self.period = int(cfg.get('stoch_period', cfg.get('period', 14)))
+        self.signal_period = int(cfg.get('stoch_signal_period', 3))
     
     def compute(self, df: pd.DataFrame, fit_data: Optional[pd.DataFrame] = None) -> pd.DataFrame:
         self._validate_input_dataframe(df)
@@ -144,10 +153,10 @@ class StochasticFeature(FeatureModule):
         low = df['Low'].astype(float)
         close = df['Close'].astype(float)
         
-        lowest_low = low.rolling(window=14).min()
-        highest_high = high.rolling(window=14).max()
+        lowest_low = low.rolling(window=self.period).min()
+        highest_high = high.rolling(window=self.period).max()
         k_line = 100 * (close - lowest_low) / (highest_high - lowest_low)
-        d_line = k_line.rolling(window=3).mean()
+        d_line = k_line.rolling(window=self.signal_period).mean()
         
         result = pd.DataFrame({
             'stoch_k': k_line,
@@ -173,10 +182,12 @@ class StochasticFeature(FeatureModule):
 
 
 class ATRFeature(FeatureModule):
-    """Average True Range (14) - Volatility indicator."""
+    """Average True Range - Volatility indicator."""
     
     def __init__(self, config: Optional[dict] = None, logger: Optional[logging.Logger] = None):
         super().__init__(name='atr_14', tier=2, config=config, logger=logger)
+        cfg = config or {}
+        self.period = int(cfg.get('atr_period', cfg.get('period', 14)))
     
     def compute(self, df: pd.DataFrame, fit_data: Optional[pd.DataFrame] = None) -> pd.DataFrame:
         self._validate_input_dataframe(df)
@@ -191,7 +202,7 @@ class ATRFeature(FeatureModule):
         tr2 = (high - close.shift()).abs()
         tr3 = (low - close.shift()).abs()
         true_range = pd.concat([tr1, tr2, tr3], axis=1).max(axis=1)
-        atr = true_range.rolling(window=14).mean()
+        atr = true_range.rolling(window=self.period).mean()
         
         result = pd.DataFrame({'atr_14': atr}, index=df.index)
         self._log_computation_complete(num_features=result.shape[1], num_rows=len(result), nan_count=result.isna().sum().sum())
@@ -214,10 +225,12 @@ class ATRFeature(FeatureModule):
 
 
 class ADXFeature(FeatureModule):
-    """Average Directional Index (14) - Trend strength with +DI/-DI."""
+    """Average Directional Index - Trend strength with +DI/-DI."""
     
     def __init__(self, config: Optional[dict] = None, logger: Optional[logging.Logger] = None):
         super().__init__(name='adx', tier=2, config=config, logger=logger)
+        cfg = config or {}
+        self.period = int(cfg.get('adx_period', cfg.get('period', 14)))
     
     def compute(self, df: pd.DataFrame, fit_data: Optional[pd.DataFrame] = None) -> pd.DataFrame:
         self._validate_input_dataframe(df)
@@ -233,7 +246,7 @@ class ADXFeature(FeatureModule):
         tr2 = (high - close.shift()).abs()
         tr3 = (low - close.shift()).abs()
         true_range = pd.concat([tr1, tr2, tr3], axis=1).max(axis=1)
-        atr = true_range.rolling(window=14).mean()
+        atr = true_range.rolling(window=self.period).mean()
         
         # Directional movements
         high_diff = high.diff()
@@ -248,13 +261,13 @@ class ADXFeature(FeatureModule):
         plus_dm[mask_plus] = high_diff[mask_plus]
         minus_dm[mask_minus] = low_diff[mask_minus]
         
-        plus_di = 100 * plus_dm.rolling(window=14).mean() / atr
-        minus_di = 100 * minus_dm.rolling(window=14).mean() / atr
+        plus_di = 100 * plus_dm.rolling(window=self.period).mean() / atr
+        minus_di = 100 * minus_dm.rolling(window=self.period).mean() / atr
         
         di_diff = (plus_di - minus_di).abs()
         di_sum = plus_di + minus_di
         dx = 100 * di_diff / di_sum
-        adx = dx.rolling(window=14).mean()
+        adx = dx.rolling(window=self.period).mean()
         
         result = pd.DataFrame({
             'adx_plus_di': plus_di,
@@ -281,10 +294,12 @@ class ADXFeature(FeatureModule):
 
 
 class OBVFeature(FeatureModule):
-    """On-Balance Volume with 20-day moving average."""
+    """On-Balance Volume with moving average."""
     
     def __init__(self, config: Optional[dict] = None, logger: Optional[logging.Logger] = None):
         super().__init__(name='obv', tier=2, config=config, logger=logger)
+        cfg = config or {}
+        self.ma_period = int(cfg.get('obv_ma_period', 20))
     
     def compute(self, df: pd.DataFrame, fit_data: Optional[pd.DataFrame] = None) -> pd.DataFrame:
         self._validate_input_dataframe(df)
@@ -300,7 +315,7 @@ class OBVFeature(FeatureModule):
         signed_volume[price_change < 0] = -volume[price_change < 0]
         
         obv = signed_volume.cumsum()
-        obv_ma = obv.rolling(window=20).mean()
+        obv_ma = obv.rolling(window=self.ma_period).mean()
         
         result = pd.DataFrame({
             'obv': obv,
@@ -319,4 +334,3 @@ class OBVFeature(FeatureModule):
     
     def check_causality(self, df: pd.DataFrame) -> Tuple[bool, List[str]]:
         return True, []
-

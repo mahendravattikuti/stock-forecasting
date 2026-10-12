@@ -19,21 +19,21 @@ class ConfigError(Exception):
 class ConfigLoader:
     """
     Load and validate configuration from JSON files.
-    
+
     Supports environment variable substitution and schema validation.
-    
+
     Parameters
     ----------
     config_path : str
         Path to master_config.json file
-    
+
     Examples
     --------
     >>> loader = ConfigLoader('master_config.json')
     >>> config = loader.load_config()
     >>> primary_source = config['data_acquisition']['primary_source']
     """
-    
+
     # Required top-level sections in config
     REQUIRED_SECTIONS = [
         'pipeline_metadata',
@@ -49,64 +49,106 @@ class ConfigLoader:
         'evaluation',
         'reporting'
     ]
-    
+
     def __init__(self, config_path: str = 'master_config.json'):
         """
         Initialize ConfigLoader with path to config file.
-        
+
         Parameters
         ----------
         config_path : str
             Path to master_config.json
+
+        Raises
+        ------
+        ConfigError
+            If the config file does not exist
         """
-        self.config_path = Path(config_path)
+        path = Path(config_path)
+        if not path.exists():
+            raise ConfigError(f"Configuration file not found: {config_path}")
+        # Expose as a string so tests comparing loader.config_path == str work
+        self.config_path = str(config_path)
+        self._config_path = path
         self.config: Dict[str, Any] = {}
-    
+        self._loaded = False
+
     def load_config(self) -> Dict[str, Any]:
         """
         Load configuration from JSON file.
-        
-        Performs environment variable substitution and schema validation.
-        
+
+        Does NOT perform environment variable substitution automatically.
+        Call override_from_env() explicitly to substitute ${VAR} patterns.
+
         Returns
         -------
         Dict[str, Any]
             Configuration dictionary
-            
+
         Raises
         ------
         ConfigError
-            If file not found, JSON invalid, or validation fails
+            If JSON is invalid
         """
-        # Load JSON file
-        if not self.config_path.exists():
-            raise ConfigError(f"Config file not found: {self.config_path}")
-        
         try:
-            with open(self.config_path, 'r') as f:
+            with open(self._config_path, 'r') as f:
                 raw_config = json.load(f)
         except json.JSONDecodeError as e:
-            raise ConfigError(f"Invalid JSON in {self.config_path}: {e}")
-        
-        # Perform environment variable substitution
-        self.config = self._substitute_env_vars(raw_config)
-        
-        # Validate schema
-        self._validate_schema()
-        
+            raise ConfigError(f"Failed to parse JSON in {self._config_path}: {e}")
+
+        self.config = raw_config
+        self._loaded = True
         return self.config
-    
+
+    def validate_schema(self) -> bool:
+        """
+        Validate that config has all required sections.
+
+        Returns
+        -------
+        bool
+            True if valid
+
+        Raises
+        ------
+        ConfigError
+            If config not loaded, or if required sections are missing
+        """
+        if not self._loaded:
+            raise ConfigError("Configuration not loaded. Call load_config() first.")
+
+        missing = [s for s in self.REQUIRED_SECTIONS if s not in self.config]
+        if missing:
+            raise ConfigError(
+                f"Configuration is missing required keys: {missing}"
+            )
+        return True
+
+    def override_from_env(self) -> None:
+        """
+        Substitute ${VAR_NAME} placeholders with environment variable values.
+
+        Raises
+        ------
+        ConfigError
+            If config not loaded, or if a referenced environment variable is not set
+        """
+        if not self._loaded:
+            raise ConfigError("Configuration not loaded. Call load_config() first.")
+
+        self.config = self._substitute_env_vars(self.config)
+
     def _substitute_env_vars(self, obj: Any) -> Any:
         """
         Recursively substitute environment variables in config.
-        
+
         Supports ${VAR_NAME} syntax.
-        
+
         Parameters
         ----------
         obj : Any
             Object to process (dict, list, str, or primitive)
-        
+
         Returns
         -------
         Any
@@ -117,67 +159,85 @@ class ConfigLoader:
         elif isinstance(obj, list):
             return [self._substitute_env_vars(item) for item in obj]
         elif isinstance(obj, str):
-            # Replace ${VAR_NAME} with environment variable value
             def replace_var(match):
                 var_name = match.group(1)
                 env_value = os.environ.get(var_name)
                 if env_value is None:
-                    raise ConfigError(f"Environment variable {var_name} not set")
+                    raise ConfigError(
+                        f"Environment variable '{var_name}' is not set"
+                    )
                 return env_value
-            
+
             return re.sub(r'\$\{(\w+)\}', replace_var, obj)
         else:
             return obj
-    
-    def _validate_schema(self) -> None:
-        """
-        Validate that config has all required sections.
-        
-        Raises
-        ------
-        ConfigError
-            If required sections are missing
-        """
-        for section in self.REQUIRED_SECTIONS:
-            if section not in self.config:
-                raise ConfigError(f"Missing required section: {section}")
-    
+
     def get(self, key_path: str, default: Any = None) -> Any:
         """
         Get config value using dot notation.
-        
+
         Parameters
         ----------
         key_path : str
             Path to value (e.g., 'data_acquisition.primary_source')
         default : Any, optional
             Default value if key not found
-        
+
         Returns
         -------
         Any
             Config value or default
-            
+
+        Raises
+        ------
+        ConfigError
+            If config has not been loaded yet
+
         Examples
         --------
         >>> value = loader.get('data_acquisition.primary_source')
         >>> value = loader.get('unknown.key', default='default_value')
         """
+        if not self._loaded:
+            raise ConfigError("Configuration not loaded. Call load_config() first.")
+
         keys = key_path.split('.')
         value = self.config
-        
+
         try:
             for key in keys:
                 value = value[key]
             return value
         except (KeyError, TypeError):
             return default
-    
+
+    def save_config(self, output_path: str) -> None:
+        """
+        Save current configuration to a JSON file.
+
+        Parameters
+        ----------
+        output_path : str
+            Path where to save the configuration
+
+        Raises
+        ------
+        ConfigError
+            If config not loaded
+        """
+        if not self._loaded:
+            raise ConfigError("Configuration not loaded. Call load_config() first.")
+
+        output = Path(output_path)
+        output.parent.mkdir(parents=True, exist_ok=True)
+        with open(output, 'w') as f:
+            json.dump(self.config, f, indent=2)
+
     @staticmethod
     def create_template(output_path: str = 'master_config.json') -> None:
         """
         Create a template master_config.json file.
-        
+
         Parameters
         ----------
         output_path : str
@@ -281,6 +341,6 @@ class ConfigLoader:
                 "generate_model_card": True
             }
         }
-        
+
         with open(output_path, 'w') as f:
             json.dump(template, f, indent=2)

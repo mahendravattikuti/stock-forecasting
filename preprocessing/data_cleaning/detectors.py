@@ -153,8 +153,8 @@ class MissingValueDetector:
         gap_threshold = pd.Timedelta(days=1)
         
         previous_date = dates[0]
-        for i, current_date in enumerate(dates[1:], 1):
-            diff = date_diffs[i]
+        for current_date in dates[1:]:
+            diff = current_date - previous_date
             
             # Check if gap > 1 day
             if diff > gap_threshold:

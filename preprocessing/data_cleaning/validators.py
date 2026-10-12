@@ -101,7 +101,7 @@ class OHLCValidator:
                     )
                 )
             
-            if l < o:
+            if o < l:
                 self.violations.append(
                     OHLCViolation(
                         date=date,
@@ -227,7 +227,7 @@ class OHLCValidator:
                 continue
             
             # Check valid ordering
-            if o <= c and l <= h and l <= o <= h and l <= c <= h:
+            if l <= o <= h and l <= c <= h and l <= h:
                 valid += 1
         
         return valid, total
@@ -321,6 +321,7 @@ class DataQualityValidator:
         if 'Close' in df.columns:
             stasis_ranges = self._detect_price_stasis(df, min_days=5)
             results['checks']['price_stasis'] = {
+                'pass': len(stasis_ranges) == 0,
                 'detected': len(stasis_ranges) > 0,
                 'ranges': stasis_ranges
             }

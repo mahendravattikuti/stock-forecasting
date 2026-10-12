@@ -189,7 +189,7 @@ class TestFeatureValidator:
         result = validator.validate_features(features_df, symbol='TEST', expected_nan_rows=20)
         
         assert not result.is_valid
-        assert any('unexpected NaN' in msg.lower() for msg in result.error_messages)
+        assert any('unexpected nan' in msg.lower() for msg in result.error_messages)
 
 
 class TestFeatureRegistry:
