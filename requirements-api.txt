@@ -1,0 +1,6 @@
+# API Server Requirements
+# Flask and related dependencies for the REST API backend
+
+Flask==2.3.0
+Flask-CORS==4.0.0
+Werkzeug==2.3.0

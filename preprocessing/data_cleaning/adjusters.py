@@ -273,7 +273,7 @@ class SplitDividendAdjuster:
                         try:
                             # Find closest date in our data
                             closest_date = None
-                            min_diff = timedelta.max
+                            min_diff = float('inf')
                             
                             for data_date in df.index:
                                 diff = abs((data_date - div_date).days)
