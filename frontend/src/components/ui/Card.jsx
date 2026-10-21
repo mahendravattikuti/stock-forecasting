@@ -5,7 +5,58 @@
 
 import React from 'react';
 
-export default function Card({
+/**
+ * CardHeader Sub-component
+ */
+function CardHeader({ title, subtitle = null, icon: Icon = null, action = null }) {
+  return (
+    <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
+      <div className="flex items-center gap-3">
+        {Icon && (
+          <div className="p-2 bg-slate-100 dark:bg-slate-700 rounded-lg text-blue-600 dark:text-blue-400">
+            <Icon size={20} />
+          </div>
+        )}
+        <div>
+          {title && (
+            <h3 className="font-semibold text-slate-900 dark:text-white">
+              {title}
+            </h3>
+          )}
+          {subtitle && (
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+              {subtitle}
+            </p>
+          )}
+        </div>
+      </div>
+      {action && <div>{action}</div>}
+    </div>
+  );
+}
+
+/**
+ * CardBody Sub-component
+ */
+function CardBody({ children }) {
+  return <div className="px-6 py-4">{children}</div>;
+}
+
+/**
+ * CardFooter Sub-component
+ */
+function CardFooter({ children }) {
+  return (
+    <div className="px-6 py-4 border-t border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 rounded-b-lg">
+      {children}
+    </div>
+  );
+}
+
+/**
+ * Main Card Component
+ */
+function Card({
   children,
   className = '',
   title = null,
@@ -26,27 +77,15 @@ export default function Card({
   return (
     <div
       className={`
-        bg-slate-800 border border-slate-700 rounded-lg
+        bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg
         ${elevationMap[elevation]}
-        ${hover ? 'hover:border-slate-600 hover:shadow-md transition-all duration-200' : ''}
+        ${hover ? 'hover:border-slate-300 dark:hover:border-slate-600 hover:shadow-md transition-all duration-200' : ''}
         ${className}
       `}
     >
       {/* Header */}
       {(title || Icon) && (
-        <div className="px-6 py-4 border-b border-slate-700 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            {Icon && (
-              <div className="p-2 bg-slate-700 rounded-lg text-blue-400">
-                <Icon size={20} />
-              </div>
-            )}
-            <div>
-              {title && <h3 className="font-semibold text-white">{title}</h3>}
-              {subtitle && <p className="text-xs text-slate-400 mt-1">{subtitle}</p>}
-            </div>
-          </div>
-        </div>
+        <CardHeader title={title} subtitle={subtitle} icon={Icon} />
       )}
 
       {/* Content */}
@@ -56,13 +95,18 @@ export default function Card({
 
       {/* Footer */}
       {footer && (
-        <div className="px-6 py-4 border-t border-slate-700 bg-slate-900 rounded-b-lg">
-          {footer}
-        </div>
+        <CardFooter>{footer}</CardFooter>
       )}
     </div>
   );
 }
+
+// Attach sub-components
+Card.Header = CardHeader;
+Card.Body = CardBody;
+Card.Footer = CardFooter;
+
+export default Card;
 
 // ==================== VARIANTS ====================
 
@@ -85,7 +129,9 @@ export function CollapsibleCard({
         className="w-full flex items-center justify-between text-left hover:opacity-70 transition-opacity"
       >
         <div />
-        <span className="text-slate-400">{isOpen ? '▼' : '▶'}</span>
+        <span className="text-slate-400 dark:text-slate-500">
+          {isOpen ? '▼' : '▶'}
+        </span>
       </button>
       {isOpen && <div className="mt-4">{children}</div>}
     </Card>

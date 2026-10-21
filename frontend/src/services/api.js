@@ -276,9 +276,9 @@ export const batchPredict = async (symbols) => {
   return { predictions, errors };
 };
 
-// ==================== EXPORT DEFAULT ====================
+// ==================== EXPORT DEFAULT & NAMED ====================
 
-export default {
+const api = {
   predictStock,
   getPipelineStatus,
   getPipelineResults,
@@ -295,3 +295,6 @@ export default {
   getPipelineInfo,
   batchPredict,
 };
+
+export { api };
+export default api;
