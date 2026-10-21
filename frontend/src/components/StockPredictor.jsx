@@ -1,256 +1,260 @@
-import React, { useState } from 'react';
-import { Search, TrendingUp, TrendingDown, Minus, Loader } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import { usePrediction } from '../hooks/usePrediction';
+import { Card, LoadingSpinner, ErrorAlert, FinancialStatusBadge, EmptyState } from './ui';
+import StockSearch from './StockSearch';
+import PredictionHistory from './PredictionHistory';
+import TechnicalIndicators from './TechnicalIndicators';
 
+/**
+ * StockPredictor Component
+ * 
+ * Main stock prediction interface with:
+ * - Real-time API integration via usePrediction hook
+ * - Autocomplete search with StockSearch component
+ * - Prediction history with localStorage persistence
+ * - Technical indicators display
+ * 
+ * @component
+ * @returns {React.ReactNode} Stock predictor UI
+ */
 export default function StockPredictor() {
-  const [symbol, setSymbol] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [prediction, setPrediction] = useState(null);
-  const [error, setError] = useState(null);
-  const [history, setHistory] = useState([]);
+  const [searchValue, setSearchValue] = useState('');
+  const [selectedPrediction, setSelectedPrediction] = useState(null);
+  const [suggestions, setSuggestions] = useState([]);
 
-  const handlePredict = async () => {
-    if (!symbol.trim()) {
-      setError('Please enter a stock symbol');
-      return;
-    }
+  // Use prediction hook for API calls
+  const { data: prediction, loading, error, predict, clearError } = usePrediction();
 
-    setLoading(true);
-    setError(null);
-    
-    try {
-      const response = await fetch(`http://localhost:5000/api/predict`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ symbol: symbol.toUpperCase() })
-      });
+  // Handle stock selection from search
+  const handleSelectStock = async (stock) => {
+    setSearchValue(stock.symbol);
+    await predict(stock.symbol);
+  };
 
-      if (!response.ok) throw new Error('Failed to fetch prediction');
-      
-      const data = await response.json();
-      setPrediction(data);
-      
-      // Add to history
-      setHistory(prev => [{
-        symbol: data.symbol,
-        recommendation: data.recommendation,
-        confidence: data.confidence,
-        price: data.current_price,
-        timestamp: new Date().toLocaleTimeString()
-      }, ...prev].slice(0, 10));
-      
-      setSymbol('');
-    } catch (err) {
-      setError(err.message || 'Error fetching prediction');
-    } finally {
-      setLoading(false);
+  // Handle manual search submission
+  const handleSearch = async () => {
+    if (searchValue.trim()) {
+      await predict(searchValue.toUpperCase());
     }
   };
 
-  const getRecommendationColor = (rec) => {
-    switch (rec) {
-      case 'BUY': return 'text-green-400 bg-green-950';
-      case 'SELL': return 'text-red-400 bg-red-950';
-      case 'HOLD': return 'text-yellow-400 bg-yellow-950';
-      default: return 'text-slate-400 bg-slate-800';
+  // Update selected prediction when new prediction arrives
+  useEffect(() => {
+    if (prediction) {
+      setSelectedPrediction(prediction);
     }
-  };
+  }, [prediction]);
 
+  // Render recommendation icon
   const getRecommendationIcon = (rec) => {
     switch (rec) {
-      case 'BUY': return <TrendingUp size={24} />;
-      case 'SELL': return <TrendingDown size={24} />;
-      case 'HOLD': return <Minus size={24} />;
-      default: return null;
+      case 'BUY':
+        return <TrendingUp size={24} />;
+      case 'SELL':
+        return <TrendingDown size={24} />;
+      case 'HOLD':
+        return <Minus size={24} />;
+      default:
+        return null;
     }
   };
 
-  const getConfidenceBarColor = (confidence) => {
+  const getConfidenceColor = (confidence) => {
     if (confidence >= 0.8) return 'bg-green-500';
-    if (confidence >= 0.6) return 'bg-yellow-500';
+    if (confidence >= 0.6) return 'bg-amber-500';
     return 'bg-orange-500';
+  };
+
+  const getRecommendationMessage = (rec) => {
+    const messages = {
+      BUY: 'Technical indicators suggest bullish momentum. Stock showing positive trends with predicted upward movement.',
+      SELL: 'Technical indicators suggest bearish momentum. Stock showing negative trends with predicted downward movement.',
+      HOLD: 'Technical indicators suggest neutral momentum. Stock showing mixed signals - maintain current position.',
+    };
+    return messages[rec] || 'No signal available';
   };
 
   return (
     <div className="space-y-6">
-      {/* Input Section */}
-      <div className="bg-slate-800 border border-slate-700 rounded-lg p-6">
-        <h3 className="text-lg font-semibold text-white mb-4">Real-Time Stock Prediction</h3>
-        
-        <div className="flex gap-3">
-          <div className="flex-1 relative">
-            <input
-              type="text"
-              value={symbol}
-              onChange={(e) => setSymbol(e.target.value.toUpperCase())}
-              onKeyPress={(e) => e.key === 'Enter' && handlePredict()}
-              placeholder="Enter stock symbol (e.g., AAPL, MSFT, GOOGL)"
-              className="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-3 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-            <Search className="absolute right-3 top-3 text-slate-400" size={20} />
+      {/* Search Section */}
+      <Card>
+        <Card.Header
+          title="Real-Time Stock Prediction"
+          subtitle="Enter a stock symbol to get AI-powered predictions"
+        />
+        <Card.Body>
+          <div className="flex gap-3">
+            <div className="flex-1">
+              <StockSearch
+                value={searchValue}
+                onChange={setSearchValue}
+                onSelect={handleSelectStock}
+                loading={loading}
+                suggestions={suggestions}
+              />
+            </div>
+            <button
+              onClick={handleSearch}
+              disabled={loading || !searchValue.trim()}
+              className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 dark:hover:bg-blue-600 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            >
+              {loading ? (
+                <>
+                  <span className="inline-block animate-spin">⟳</span>
+                  Predicting...
+                </>
+              ) : (
+                'Predict'
+              )}
+            </button>
           </div>
-          
-          <button
-            onClick={handlePredict}
-            disabled={loading}
-            className="px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-600 text-white rounded-lg font-medium transition-colors flex items-center gap-2"
-          >
-            {loading ? (
-              <>
-                <Loader size={18} className="animate-spin" />
-                Predicting...
-              </>
-            ) : (
-              <>
-                <Search size={18} />
-                Predict
-              </>
-            )}
-          </button>
-        </div>
 
-        {error && (
-          <div className="mt-3 p-3 bg-red-950 border border-red-700 rounded-lg text-red-200 text-sm">
-            ⚠️ {error}
-          </div>
-        )}
-      </div>
+          {error && (
+            <div className="mt-3">
+              <ErrorAlert
+                title="Prediction Failed"
+                message={error.message}
+                onRetry={handleSearch}
+                variant="danger"
+              />
+            </div>
+          )}
+        </Card.Body>
+      </Card>
+
+      {/* Loading State */}
+      {loading && (
+        <LoadingSpinner
+          message="Analyzing stock data and generating prediction..."
+          size="md"
+        />
+      )}
 
       {/* Current Prediction */}
-      {prediction && (
-        <div className={`border rounded-lg p-8 ${getRecommendationColor(prediction.recommendation)}`}>
-          <div className="flex items-start justify-between mb-6">
-            <div>
-              <h2 className="text-3xl font-bold text-white">{prediction.symbol}</h2>
-              <p className="text-slate-300 mt-1">Current Price: ${prediction.current_price.toFixed(2)}</p>
-            </div>
-            <div className="text-6xl opacity-20">
-              {getRecommendationIcon(prediction.recommendation)}
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            <div>
-              <p className="text-sm opacity-75 mb-1">Predicted Next Day</p>
-              <p className="text-2xl font-bold">${prediction.predicted_price.toFixed(2)}</p>
-              <p className="text-sm mt-1">
-                {prediction.predicted_change >= 0 ? '📈' : '📉'} 
-                {' '}{Math.abs(prediction.predicted_change).toFixed(2)}%
-              </p>
-            </div>
-            
-            <div>
-              <p className="text-sm opacity-75 mb-1">Confidence Score</p>
-              <p className="text-2xl font-bold">{(prediction.confidence * 100).toFixed(1)}%</p>
-              <div className="w-full bg-slate-700 rounded-full h-2 mt-2">
-                <div
-                  className={`${getConfidenceBarColor(prediction.confidence)} h-2 rounded-full`}
-                  style={{ width: `${prediction.confidence * 100}%` }}
+      {selectedPrediction && !loading && (
+        <Card
+          className={`border-2 ${
+            selectedPrediction.recommendation === 'BUY'
+              ? 'border-green-500 bg-green-50 dark:bg-green-950'
+              : selectedPrediction.recommendation === 'SELL'
+                ? 'border-red-500 bg-red-50 dark:bg-red-950'
+                : 'border-amber-500 bg-amber-50 dark:bg-amber-950'
+          }`}
+        >
+          <Card.Header
+            title={`${selectedPrediction.symbol} - Prediction Result`}
+            subtitle={`Current Price: $${selectedPrediction.current_price?.toFixed(2) || 'N/A'}`}
+          />
+          <Card.Body>
+            {/* Main Prediction Display */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+              {/* Recommendation */}
+              <div className="text-center">
+                <div className="text-5xl mb-2 opacity-75">
+                  {getRecommendationIcon(selectedPrediction.recommendation)}
+                </div>
+                <p className="text-sm text-slate-600 dark:text-slate-400 mb-1">
+                  Recommendation
+                </p>
+                <FinancialStatusBadge
+                  signal={selectedPrediction.recommendation}
+                  confidence={selectedPrediction.confidence}
                 />
+              </div>
+
+              {/* Predicted Price */}
+              <div>
+                <p className="text-sm text-slate-600 dark:text-slate-400 mb-1">
+                  Predicted Next Day
+                </p>
+                <p className="text-3xl font-bold text-slate-900 dark:text-white">
+                  ${selectedPrediction.predicted_price?.toFixed(2) || 'N/A'}
+                </p>
+                <p className="text-lg font-semibold mt-2">
+                  {selectedPrediction.predicted_change >= 0 ? '📈' : '📉'}
+                  <span className="ml-1">
+                    {Math.abs(selectedPrediction.predicted_change || 0).toFixed(2)}%
+                  </span>
+                </p>
+              </div>
+
+              {/* Confidence */}
+              <div>
+                <p className="text-sm text-slate-600 dark:text-slate-400 mb-1">
+                  Confidence Score
+                </p>
+                <p className="text-3xl font-bold text-slate-900 dark:text-white">
+                  {((selectedPrediction.confidence || 0) * 100).toFixed(1)}%
+                </p>
+                <div className="w-full bg-slate-300 dark:bg-slate-700 rounded-full h-2 mt-2">
+                  <div
+                    className={`${getConfidenceColor(selectedPrediction.confidence || 0)} h-2 rounded-full transition-all`}
+                    style={{
+                      width: `${(selectedPrediction.confidence || 0) * 100}%`,
+                    }}
+                  />
+                </div>
+              </div>
+
+              {/* Model Used */}
+              <div>
+                <p className="text-sm text-slate-600 dark:text-slate-400 mb-1">
+                  Model Used
+                </p>
+                <p className="text-2xl font-bold text-slate-900 dark:text-white">
+                  {selectedPrediction.model || 'Deep Learning'}
+                </p>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">
+                  Best performing baseline
+                </p>
               </div>
             </div>
 
-            <div>
-              <p className="text-sm opacity-75 mb-1">Model Used</p>
-              <p className="text-2xl font-bold">{prediction.model}</p>
-              <p className="text-sm mt-1 opacity-75">Best performing baseline</p>
-            </div>
-          </div>
-
-          <div className="border-t border-current opacity-25 pt-4">
-            <p className="text-center text-sm opacity-75">
-              Analysis based on 10 years of historical data and technical indicators
-            </p>
-          </div>
-
-          {prediction.recommendation === 'BUY' && (
-            <div className="mt-6 p-4 bg-green-900 bg-opacity-50 rounded-lg border border-green-700">
+            {/* Signal Message */}
+            <div
+              className={`p-4 rounded-lg border ${
+                selectedPrediction.recommendation === 'BUY'
+                  ? 'bg-green-100 dark:bg-green-900/30 border-green-300 dark:border-green-700'
+                  : selectedPrediction.recommendation === 'SELL'
+                    ? 'bg-red-100 dark:bg-red-900/30 border-red-300 dark:border-red-700'
+                    : 'bg-amber-100 dark:bg-amber-900/30 border-amber-300 dark:border-amber-700'
+              }`}
+            >
+              <p className="text-sm font-semibold mb-1">Signal Analysis</p>
               <p className="text-sm">
-                <strong>Signal:</strong> Technical indicators suggest bullish momentum. 
-                Stock showing positive trends with predicted upward movement.
+                {getRecommendationMessage(selectedPrediction.recommendation)}
               </p>
             </div>
-          )}
 
-          {prediction.recommendation === 'SELL' && (
-            <div className="mt-6 p-4 bg-red-900 bg-opacity-50 rounded-lg border border-red-700">
-              <p className="text-sm">
-                <strong>Signal:</strong> Technical indicators suggest bearish momentum.
-                Stock showing negative trends with predicted downward movement.
-              </p>
+            {/* Analysis Footer */}
+            <div className="mt-4 text-xs text-slate-500 dark:text-slate-400 text-center">
+              Analysis based on 10 years of historical data and advanced technical indicators
             </div>
-          )}
-
-          {prediction.recommendation === 'HOLD' && (
-            <div className="mt-6 p-4 bg-yellow-900 bg-opacity-50 rounded-lg border border-yellow-700">
-              <p className="text-sm">
-                <strong>Signal:</strong> Technical indicators suggest neutral momentum.
-                Stock showing mixed signals - maintain current position.
-              </p>
-            </div>
-          )}
-        </div>
+          </Card.Body>
+        </Card>
       )}
 
-      {/* Popular Stocks */}
-      {!prediction && (
-        <div className="bg-slate-800 border border-slate-700 rounded-lg p-6">
-          <h3 className="text-lg font-semibold text-white mb-4">Quick Access - Popular Stocks</h3>
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
-            {['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA'].map(sym => (
-              <button
-                key={sym}
-                onClick={() => {
-                  setSymbol(sym);
-                  setTimeout(() => {
-                    document.querySelector('button[class*="bg-blue-600"]').click();
-                  }, 0);
-                }}
-                className="p-3 bg-slate-700 hover:bg-slate-600 rounded-lg text-white font-semibold transition-colors"
-              >
-                {sym}
-              </button>
-            ))}
-          </div>
-        </div>
+      {/* Technical Indicators */}
+      {selectedPrediction && selectedPrediction.indicators && (
+        <TechnicalIndicators
+          indicators={selectedPrediction.indicators}
+          symbol={selectedPrediction.symbol}
+        />
       )}
 
       {/* Prediction History */}
-      {history.length > 0 && (
-        <div className="bg-slate-800 border border-slate-700 rounded-lg p-6">
-          <h3 className="text-lg font-semibold text-white mb-4">Recent Predictions</h3>
-          <div className="space-y-2 max-h-96 overflow-y-auto">
-            {history.map((entry, idx) => (
-              <div key={idx} className="flex items-center justify-between p-3 bg-slate-700 rounded-lg hover:bg-slate-600 transition-colors">
-                <div className="flex items-center gap-3 flex-1">
-                  <span className="font-semibold text-white w-16">{entry.symbol}</span>
-                  <span className="text-slate-400 text-sm">${entry.price.toFixed(2)}</span>
-                  <span className="text-xs text-slate-500">{entry.timestamp}</span>
-                </div>
-                
-                <div className="flex items-center gap-3">
-                  <div className="text-right">
-                    <p className={`font-semibold text-sm ${
-                      entry.recommendation === 'BUY' ? 'text-green-400' :
-                      entry.recommendation === 'SELL' ? 'text-red-400' :
-                      'text-yellow-400'
-                    }`}>
-                      {entry.recommendation}
-                    </p>
-                    <p className="text-xs text-slate-400">
-                      {(entry.confidence * 100).toFixed(0)}% confidence
-                    </p>
-                  </div>
-                  
-                  <div className="text-2xl">
-                    {entry.recommendation === 'BUY' ? '🟢' :
-                     entry.recommendation === 'SELL' ? '🔴' :
-                     '🟡'}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+      {selectedPrediction && (
+        <PredictionHistory predictions={selectedPrediction} />
+      )}
+
+      {/* Empty State */}
+      {!selectedPrediction && !loading && !error && (
+        <EmptyState
+          title="Start Predicting"
+          description="Search for a stock symbol to get AI-powered price predictions and technical analysis."
+          icon={<TrendingUp className="w-12 h-12 text-blue-600" />}
+        />
       )}
     </div>
   );
