@@ -21,47 +21,65 @@ export default function Configuration() {
   };
 
   const ConfigSection = ({ title, children }) => (
-    <div className="bg-slate-800 border border-slate-700 rounded-lg p-6 mb-6">
-      <h3 className="text-lg font-semibold text-white mb-4">{title}</h3>
+    <fieldset className="bg-slate-800 border border-slate-700 rounded-lg p-6 mb-6">
+      <legend className="text-lg font-semibold text-white mb-4">{title}</legend>
       <div className="space-y-4">{children}</div>
-    </div>
+    </fieldset>
   );
 
-  const ConfigField = ({ label, type = 'text', value, onChange, options = null, children = null }) => (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
-      <label className="text-slate-300 font-medium">{label}</label>
-      <div className="md:col-span-2">
-        {type === 'checkbox' ? (
-          <input
-            type="checkbox"
-            checked={value}
-            onChange={(e) => onChange(e.target.checked)}
-            className="w-4 h-4 rounded border-slate-600 text-blue-600 focus:ring-2 focus:ring-blue-500"
-          />
-        ) : options ? (
-          <select
-            value={value}
-            onChange={(e) => onChange(e.target.value)}
-            className="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            {options.map(opt => (
-              <option key={opt.value} value={opt.value}>{opt.label}</option>
-            ))}
-          </select>
-        ) : (
-          <input
-            type={type}
-            value={value}
-            onChange={(e) => onChange(type === 'number' ? parseFloat(e.target.value) : e.target.value)}
-            className="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        )}
+  const ConfigField = ({ label, type = 'text', value, onChange, options = null, children = null }) => {
+    // Create unique ID for label-input association
+    const fieldId = `config-${label.replace(/[^a-z0-9]/gi, '-').toLowerCase()}`;
+    
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
+        <label htmlFor={fieldId} className="text-slate-300 font-medium">
+          {label}
+        </label>
+        <div className="md:col-span-2">
+          {type === 'checkbox' ? (
+            <div className="flex items-center gap-3">
+              <input
+                id={fieldId}
+                type="checkbox"
+                checked={value}
+                onChange={(e) => onChange(e.target.checked)}
+                className="w-4 h-4 rounded border-slate-600 text-blue-600 focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                aria-label={`Enable ${label}`}
+              />
+              <label htmlFor={fieldId} className="text-slate-400 text-sm cursor-pointer">
+                {label}
+              </label>
+            </div>
+          ) : options ? (
+            <select
+              id={fieldId}
+              value={value}
+              onChange={(e) => onChange(e.target.value)}
+              className="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
+              aria-label={`Select ${label}`}
+            >
+              {options.map(opt => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
+              ))}
+            </select>
+          ) : (
+            <input
+              id={fieldId}
+              type={type}
+              value={value}
+              onChange={(e) => onChange(type === 'number' ? parseFloat(e.target.value) : e.target.value)}
+              className="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
+              aria-label={label}
+            />
+          )}
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   return (
-    <div className="space-y-6">
+    <form className="space-y-6" onSubmit={(e) => e.preventDefault()}>
       <ConfigSection title="Data Acquisition">
         <ConfigField
           label="Data Source"
@@ -145,32 +163,52 @@ export default function Configuration() {
       </ConfigSection>
 
       {/* Action Buttons */}
-      <div className="flex gap-3">
-        <button className="flex items-center gap-2 px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors">
-          <Save size={18} />
+      <div className="flex flex-wrap gap-3">
+        <button 
+          type="button"
+          aria-label="Save current configuration"
+          className="flex items-center gap-2 px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors focus:ring-2 focus:ring-blue-500 focus:outline-none"
+        >
+          <Save size={18} aria-hidden="true" />
           Save Configuration
         </button>
-        <button className="flex items-center gap-2 px-6 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg font-medium transition-colors">
-          <RotateCcw size={18} />
+        <button 
+          type="reset"
+          aria-label="Reset configuration to default values"
+          className="flex items-center gap-2 px-6 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg font-medium transition-colors focus:ring-2 focus:ring-blue-500 focus:outline-none"
+        >
+          <RotateCcw size={18} aria-hidden="true" />
           Reset to Defaults
         </button>
-        <button className="flex items-center gap-2 px-6 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg font-medium transition-colors">
-          <Download size={18} />
+        <button 
+          type="button"
+          aria-label="Export configuration to file"
+          className="flex items-center gap-2 px-6 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg font-medium transition-colors focus:ring-2 focus:ring-blue-500 focus:outline-none"
+        >
+          <Download size={18} aria-hidden="true" />
           Export Config
         </button>
-        <button className="flex items-center gap-2 px-6 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg font-medium transition-colors">
-          <Upload size={18} />
+        <button 
+          type="button"
+          aria-label="Import configuration from file"
+          className="flex items-center gap-2 px-6 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg font-medium transition-colors focus:ring-2 focus:ring-blue-500 focus:outline-none"
+        >
+          <Upload size={18} aria-hidden="true" />
           Import Config
         </button>
       </div>
 
       {/* Configuration Preview */}
-      <div className="bg-slate-800 border border-slate-700 rounded-lg p-6">
+      <section className="bg-slate-800 border border-slate-700 rounded-lg p-6">
         <h3 className="text-lg font-semibold text-white mb-4">Configuration Preview (JSON)</h3>
-        <pre className="bg-slate-950 rounded-lg p-4 text-slate-300 text-sm overflow-x-auto">
+        <pre 
+          className="bg-slate-950 rounded-lg p-4 text-slate-300 text-sm overflow-x-auto"
+          role="region"
+          aria-label="JSON configuration preview"
+        >
           {JSON.stringify(config, null, 2)}
         </pre>
-      </div>
-    </div>
+      </section>
+    </form>
   );
 }
