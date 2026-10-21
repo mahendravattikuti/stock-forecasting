@@ -39,10 +39,16 @@ export default function MetricCard({
         ${onClick ? 'cursor-pointer hover:shadow-md' : ''}
       `}
       onClick={onClick}
+      onKeyDown={onClick ? (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onClick();
+        }
+      } : undefined}
       role={onClick ? 'button' : undefined}
       tabIndex={onClick ? 0 : undefined}
-      onKeyDown={onClick ? (e) => e.key === 'Enter' && onClick() : undefined}
-      title={tooltip}
+      aria-label={onClick ? `${label}: ${value}${unit ? ' ' + unit : ''}${trend ? ` - ${trend > 0 ? 'up' : 'down'} ${Math.abs(trend)}%` : ''}` : undefined}
+      title={onClick ? `Click to view ${label} details` : tooltip}
     >
       <div className="flex items-center justify-between gap-2">
         <div className="flex-1 min-w-0">
@@ -72,7 +78,7 @@ export default function MetricCard({
         {/* Icon */}
         {!loading && Icon && (
           <div className={`p-2 sm:p-3 rounded-lg flex-shrink-0 ${colorMap[color]}`}>
-            <Icon size={16} className="sm:block" />
+            <Icon size={16} className="sm:block" aria-hidden="true" />
           </div>
         )}
       </div>

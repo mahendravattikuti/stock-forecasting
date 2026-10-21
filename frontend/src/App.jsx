@@ -22,16 +22,25 @@ function AppContent() {
     { id: 'config', label: 'Configuration', icon: Settings }
   ];
 
+  // Update document title when active tab changes
+  useEffect(() => {
+    const activeTabLabel = tabs.find(tab => tab.id === activeTab)?.label || 'Stock Optimizer';
+    document.title = `${activeTabLabel} - Stock Optimizer`;
+  }, [activeTab, tabs]);
+
   return (
-    <AppLayout title="Stock Market Forecasting System">
-      <main className="container mx-auto px-4 py-8">
-        {activeTab === 'predictor' && <StockPredictor />}
-        {activeTab === 'dashboard' && <Dashboard pipelineStatus={pipelineStatus} results={results} />}
-        {activeTab === 'data' && <DataAcquisition setPipelineStatus={setPipelineStatus} setResults={setResults} />}
-        {activeTab === 'models' && <ModelResults results={results} />}
-        {activeTab === 'config' && <Configuration />}
-      </main>
-    </AppLayout>
+    <>
+      <Navigation tabs={tabs} activeTab={activeTab} setActiveTab={setActiveTab} />
+      <AppLayout title="Stock Market Forecasting System">
+        <main className="container mx-auto px-4 py-8" role="main">
+          {activeTab === 'predictor' && <StockPredictor />}
+          {activeTab === 'dashboard' && <Dashboard pipelineStatus={pipelineStatus} results={results} />}
+          {activeTab === 'data' && <DataAcquisition setPipelineStatus={setPipelineStatus} setResults={setResults} />}
+          {activeTab === 'models' && <ModelResults results={results} />}
+          {activeTab === 'config' && <Configuration />}
+        </main>
+      </AppLayout>
+    </>
   );
 }
 

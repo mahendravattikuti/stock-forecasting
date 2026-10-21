@@ -112,7 +112,7 @@ export default Card;
 
 /**
  * CollapsibleCard Component
- * Card that can be expanded/collapsed
+ * Card that can be expanded/collapsed with full accessibility support
  */
 export function CollapsibleCard({
   title,
@@ -122,18 +122,32 @@ export function CollapsibleCard({
 }) {
   const [isOpen, setIsOpen] = React.useState(defaultOpen);
 
+  const toggleOpen = () => {
+    setIsOpen(!isOpen);
+  };
+
   return (
     <Card title={title} icon={Icon}>
       <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="w-full flex items-center justify-between text-left hover:opacity-70 transition-opacity"
+        onClick={toggleOpen}
+        aria-expanded={isOpen}
+        aria-label={`Toggle ${title} section${isOpen ? ' - expanded' : ' - collapsed'}`}
+        className="w-full flex items-center justify-between text-left py-2 px-3 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors focus:ring-2 focus:ring-blue-500 focus:outline-none"
       >
-        <div />
-        <span className="text-slate-400 dark:text-slate-500">
-          {isOpen ? '▼' : '▶'}
+        <span className="font-medium text-slate-700 dark:text-slate-300">{title}</span>
+        <span 
+          className="text-slate-400 dark:text-slate-500 flex-shrink-0 transition-transform"
+          aria-hidden="true"
+          style={{ transform: isOpen ? 'rotate(0deg)' : 'rotate(-90deg)' }}
+        >
+          ▼
         </span>
       </button>
-      {isOpen && <div className="mt-4">{children}</div>}
+      {isOpen && (
+        <div className="mt-4 border-t border-slate-200 dark:border-slate-700 pt-4">
+          {children}
+        </div>
+      )}
     </Card>
   );
 }

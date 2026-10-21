@@ -30,35 +30,41 @@ export default function StatusBadge({
       text: 'text-green-800 dark:text-green-200',
       icon: CheckCircle2,
       color: '#22c55e',
+      ariaLabel: 'Status: Success',
     },
     error: {
       bg: 'bg-red-100 dark:bg-red-950',
       text: 'text-red-800 dark:text-red-200',
       icon: AlertCircle,
       color: '#ef4444',
+      ariaLabel: 'Status: Error',
     },
     warning: {
       bg: 'bg-amber-100 dark:bg-amber-950',
       text: 'text-amber-800 dark:text-amber-200',
       icon: AlertCircle,
       color: '#f59e0b',
+      ariaLabel: 'Status: Warning',
     },
     pending: {
       bg: 'bg-slate-100 dark:bg-slate-800',
       text: 'text-slate-800 dark:text-slate-200',
       icon: Clock,
       color: '#64748b',
+      ariaLabel: 'Status: Pending',
     },
     loading: {
       bg: 'bg-blue-100 dark:bg-blue-950',
       text: 'text-blue-800 dark:text-blue-200',
       icon: Loader,
       color: '#3b82f6',
+      ariaLabel: 'Status: Loading',
     },
   };
 
   const config = statusConfig[status] || statusConfig.pending;
   const Icon = config.icon;
+  const displayLabel = label || status.charAt(0).toUpperCase() + status.slice(1);
 
   return (
     <div
@@ -68,12 +74,16 @@ export default function StatusBadge({
         rounded-full inline-flex items-center gap-1.5 font-medium
         transition-all duration-200
       `}
+      role="status"
+      aria-label={`${config.ariaLabel}${label ? ': ' + label : ''}`}
+      aria-busy={status === 'loading'}
     >
       <Icon
         size={iconSizeMap[size]}
         className={animated && status === 'loading' ? 'animate-spin' : ''}
+        aria-hidden="true"
       />
-      <span>{label || status.charAt(0).toUpperCase() + status.slice(1)}</span>
+      <span>{displayLabel}</span>
     </div>
   );
 }
