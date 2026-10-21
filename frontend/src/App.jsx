@@ -5,9 +5,11 @@ import ModelResults from './components/ModelResults';
 import Configuration from './components/Configuration';
 import StockPredictor from './components/StockPredictor';
 import Navigation from './components/Navigation';
+import AppLayout from './components/layout/AppLayout';
+import { ThemeProvider } from './context/ThemeContext';
 import { BarChart3, Database, TrendingUp, Settings, Zap } from 'lucide-react';
 
-export default function App() {
+function AppContent() {
   const [activeTab, setActiveTab] = useState('predictor');
   const [pipelineStatus, setPipelineStatus] = useState('idle');
   const [results, setResults] = useState(null);
@@ -21,9 +23,7 @@ export default function App() {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
-      <Navigation tabs={tabs} activeTab={activeTab} setActiveTab={setActiveTab} />
-      
+    <AppLayout title="Stock Market Forecasting System">
       <main className="container mx-auto px-4 py-8">
         {activeTab === 'predictor' && <StockPredictor />}
         {activeTab === 'dashboard' && <Dashboard pipelineStatus={pipelineStatus} results={results} />}
@@ -31,6 +31,14 @@ export default function App() {
         {activeTab === 'models' && <ModelResults results={results} />}
         {activeTab === 'config' && <Configuration />}
       </main>
-    </div>
+    </AppLayout>
+  );
+}
+
+export default function App() {
+  return (
+    <ThemeProvider defaultTheme="light">
+      <AppContent />
+    </ThemeProvider>
   );
 }

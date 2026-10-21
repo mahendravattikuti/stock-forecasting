@@ -1,3 +1,7 @@
+/* Component Styles */
+@import '../styles/Tooltip.css';
+@import '../styles/Components.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
