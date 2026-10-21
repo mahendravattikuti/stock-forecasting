@@ -76,7 +76,7 @@ export default function StockPredictor() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Search Section */}
       <Card>
         <Card.Header
@@ -84,8 +84,8 @@ export default function StockPredictor() {
           subtitle="Enter a stock symbol to get AI-powered predictions"
         />
         <Card.Body>
-          <div className="flex gap-3">
-            <div className="flex-1">
+          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+            <div className="flex-1 min-w-0">
               <StockSearch
                 value={searchValue}
                 onChange={setSearchValue}
@@ -97,12 +97,13 @@ export default function StockPredictor() {
             <button
               onClick={handleSearch}
               disabled={loading || !searchValue.trim()}
-              className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 dark:hover:bg-blue-600 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              className="w-full sm:w-auto px-4 sm:px-6 py-2.5 bg-blue-600 hover:bg-blue-700 dark:hover:bg-blue-600 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-sm sm:text-base"
             >
               {loading ? (
                 <>
                   <span className="inline-block animate-spin">⟳</span>
-                  Predicting...
+                  <span className="hidden sm:inline">Predicting...</span>
+                  <span className="sm:hidden">Wait...</span>
                 </>
               ) : (
                 'Predict'
@@ -146,15 +147,15 @@ export default function StockPredictor() {
             title={`${selectedPrediction.symbol} - Prediction Result`}
             subtitle={`Current Price: $${selectedPrediction.current_price?.toFixed(2) || 'N/A'}`}
           />
-          <Card.Body>
-            {/* Main Prediction Display */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+          <Card.Body className="space-y-4 sm:space-y-6">
+            {/* Main Prediction Display - Responsive Grid */}
+            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-6">
               {/* Recommendation */}
-              <div className="text-center">
-                <div className="text-5xl mb-2 opacity-75">
+              <div className="text-center col-span-1">
+                <div className="text-3xl sm:text-5xl mb-1 sm:mb-2 opacity-75">
                   {getRecommendationIcon(selectedPrediction.recommendation)}
                 </div>
-                <p className="text-sm text-slate-600 dark:text-slate-400 mb-1">
+                <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 mb-1">
                   Recommendation
                 </p>
                 <FinancialStatusBadge
@@ -165,13 +166,13 @@ export default function StockPredictor() {
 
               {/* Predicted Price */}
               <div>
-                <p className="text-sm text-slate-600 dark:text-slate-400 mb-1">
+                <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 mb-1">
                   Predicted Next Day
                 </p>
-                <p className="text-3xl font-bold text-slate-900 dark:text-white">
+                <p className="text-xl sm:text-3xl font-bold text-slate-900 dark:text-white">
                   ${selectedPrediction.predicted_price?.toFixed(2) || 'N/A'}
                 </p>
-                <p className="text-lg font-semibold mt-2">
+                <p className="text-base sm:text-lg font-semibold mt-1 sm:mt-2">
                   {selectedPrediction.predicted_change >= 0 ? '📈' : '📉'}
                   <span className="ml-1">
                     {Math.abs(selectedPrediction.predicted_change || 0).toFixed(2)}%
@@ -181,13 +182,13 @@ export default function StockPredictor() {
 
               {/* Confidence */}
               <div>
-                <p className="text-sm text-slate-600 dark:text-slate-400 mb-1">
+                <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 mb-1">
                   Confidence Score
                 </p>
-                <p className="text-3xl font-bold text-slate-900 dark:text-white">
+                <p className="text-xl sm:text-3xl font-bold text-slate-900 dark:text-white">
                   {((selectedPrediction.confidence || 0) * 100).toFixed(1)}%
                 </p>
-                <div className="w-full bg-slate-300 dark:bg-slate-700 rounded-full h-2 mt-2">
+                <div className="w-full bg-slate-300 dark:bg-slate-700 rounded-full h-2 mt-1 sm:mt-2">
                   <div
                     className={`${getConfidenceColor(selectedPrediction.confidence || 0)} h-2 rounded-full transition-all`}
                     style={{
@@ -199,13 +200,13 @@ export default function StockPredictor() {
 
               {/* Model Used */}
               <div>
-                <p className="text-sm text-slate-600 dark:text-slate-400 mb-1">
+                <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 mb-1">
                   Model Used
                 </p>
-                <p className="text-2xl font-bold text-slate-900 dark:text-white">
+                <p className="text-lg sm:text-2xl font-bold text-slate-900 dark:text-white truncate">
                   {selectedPrediction.model || 'Deep Learning'}
                 </p>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 sm:mt-2">
                   Best performing baseline
                 </p>
               </div>
@@ -213,7 +214,7 @@ export default function StockPredictor() {
 
             {/* Signal Message */}
             <div
-              className={`p-4 rounded-lg border ${
+              className={`p-3 sm:p-4 rounded-lg border text-sm ${
                 selectedPrediction.recommendation === 'BUY'
                   ? 'bg-green-100 dark:bg-green-900/30 border-green-300 dark:border-green-700'
                   : selectedPrediction.recommendation === 'SELL'
@@ -221,14 +222,14 @@ export default function StockPredictor() {
                     : 'bg-amber-100 dark:bg-amber-900/30 border-amber-300 dark:border-amber-700'
               }`}
             >
-              <p className="text-sm font-semibold mb-1">Signal Analysis</p>
-              <p className="text-sm">
+              <p className="text-xs sm:text-sm font-semibold mb-1">Signal Analysis</p>
+              <p className="text-xs sm:text-sm leading-relaxed">
                 {getRecommendationMessage(selectedPrediction.recommendation)}
               </p>
             </div>
 
             {/* Analysis Footer */}
-            <div className="mt-4 text-xs text-slate-500 dark:text-slate-400 text-center">
+            <div className="text-xs text-slate-500 dark:text-slate-400 text-center">
               Analysis based on 10 years of historical data and advanced technical indicators
             </div>
           </Card.Body>

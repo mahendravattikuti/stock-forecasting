@@ -116,14 +116,14 @@ export default function PipelineControl() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Header with Status */}
       <Card>
         <Card.Header
           title="Pipeline Control"
           subtitle="Manage and monitor the stock prediction pipeline"
           action={
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-shrink-0">
               {statusLoading ? (
                 <span className="text-xs text-slate-500">Updating...</span>
               ) : (
@@ -139,7 +139,7 @@ export default function PipelineControl() {
         <Card.Body>
           {/* Error Alert */}
           {error && (
-            <div className="mb-4">
+            <div className="mb-3 sm:mb-4">
               <ErrorAlert
                 title="Pipeline Error"
                 message={error.message}
@@ -150,7 +150,7 @@ export default function PipelineControl() {
 
           {/* Status Error */}
           {statusError && (
-            <div className="mb-4">
+            <div className="mb-3 sm:mb-4">
               <ErrorAlert
                 title="Status Update Failed"
                 message={statusError.message}
@@ -160,75 +160,75 @@ export default function PipelineControl() {
           )}
 
           {/* Control Buttons */}
-          <div className="flex gap-3 flex-wrap">
+          <div className="flex flex-col xs:flex-row gap-2 sm:gap-3">
             <button
               onClick={handleStartPipeline}
               disabled={isRunning || statusLoading}
-              className="flex items-center gap-2 px-6 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex items-center justify-center gap-2 px-4 sm:px-6 py-2 sm:py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base flex-1 xs:flex-initial"
               title="Start the prediction pipeline"
             >
-              <Play size={18} />
-              Start Pipeline
+              <Play size={16} className="sm:block" />
+              <span>Start</span>
             </button>
 
             {isRunning && (
               <button
                 onClick={handleStopPipeline}
-                className="flex items-center gap-2 px-6 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors"
+                className="flex items-center justify-center gap-2 px-4 sm:px-6 py-2 sm:py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors text-sm sm:text-base flex-1 xs:flex-initial"
                 title="Stop the running pipeline"
               >
-                <Square size={18} />
-                Stop Pipeline
+                <Square size={16} className="sm:block" />
+                <span>Stop</span>
               </button>
             )}
 
             <button
               onClick={refresh}
               disabled={statusLoading}
-              className="flex items-center gap-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50"
+              className="flex items-center justify-center gap-2 px-4 sm:px-6 py-2 sm:py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50 text-sm sm:text-base flex-1 xs:flex-initial"
               title="Refresh pipeline status"
             >
-              <RefreshCw size={18} className={statusLoading ? 'animate-spin' : ''} />
-              Refresh Status
+              <RefreshCw size={16} className={`${statusLoading ? 'animate-spin' : ''} sm:block`} />
+              <span className="hidden sm:inline">Refresh</span>
             </button>
 
             <button
               onClick={() => setShowConfig(!showConfig)}
-              className="flex items-center gap-2 px-6 py-2.5 bg-slate-600 hover:bg-slate-700 text-white rounded-lg font-medium transition-colors"
+              className="flex items-center justify-center gap-2 px-4 sm:px-6 py-2 sm:py-2.5 bg-slate-600 hover:bg-slate-700 text-white rounded-lg font-medium transition-colors text-sm sm:text-base flex-1 xs:flex-initial"
               title="Edit pipeline configuration"
             >
-              <Settings size={18} />
-              Configuration
+              <Settings size={16} className="sm:block" />
+              <span className="hidden sm:inline">Config</span>
             </button>
           </div>
 
           {/* Status Details */}
           {pipelineStatus && (
-            <div className="mt-4 p-4 bg-slate-100 dark:bg-slate-800 rounded-lg">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                <div>
-                  <p className="text-slate-600 dark:text-slate-400">State</p>
-                  <p className="font-semibold text-slate-900 dark:text-white">
+            <div className="mt-3 sm:mt-4 p-3 sm:p-4 bg-slate-100 dark:bg-slate-800 rounded-lg">
+              <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4 text-xs sm:text-sm">
+                <div className="min-w-0">
+                  <p className="text-slate-600 dark:text-slate-400 text-xs">State</p>
+                  <p className="font-semibold text-slate-900 dark:text-white truncate">
                     {pipelineStatus.state || 'unknown'}
                   </p>
                 </div>
-                <div>
-                  <p className="text-slate-600 dark:text-slate-400">Last Updated</p>
-                  <p className="font-semibold text-slate-900 dark:text-white">
+                <div className="min-w-0">
+                  <p className="text-slate-600 dark:text-slate-400 text-xs">Last Updated</p>
+                  <p className="font-semibold text-slate-900 dark:text-white text-xs sm:text-sm truncate">
                     {new Date(pipelineStatus.timestamp).toLocaleString()}
                   </p>
                 </div>
                 {pipelineStatus.progress !== undefined && (
-                  <div>
-                    <p className="text-slate-600 dark:text-slate-400">Progress</p>
+                  <div className="min-w-0">
+                    <p className="text-slate-600 dark:text-slate-400 text-xs">Progress</p>
                     <p className="font-semibold text-slate-900 dark:text-white">
                       {(pipelineStatus.progress * 100).toFixed(0)}%
                     </p>
                   </div>
                 )}
                 {pipelineStatus.duration && (
-                  <div>
-                    <p className="text-slate-600 dark:text-slate-400">Duration</p>
+                  <div className="min-w-0">
+                    <p className="text-slate-600 dark:text-slate-400 text-xs">Duration</p>
                     <p className="font-semibold text-slate-900 dark:text-white">
                       {pipelineStatus.duration}s
                     </p>

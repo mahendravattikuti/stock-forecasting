@@ -90,23 +90,23 @@ export default function Dashboard() {
   ];
 
   const StatusCard = ({ icon: Icon, label, value, color, trend }) => (
-    <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-6 hover:shadow-lg transition-all">
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-slate-600 dark:text-slate-400 text-sm font-medium">{label}</p>
-          <p className="text-3xl font-bold text-slate-900 dark:text-white mt-2">
+    <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-3 sm:p-4 md:p-6 hover:shadow-lg transition-all">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+        <div className="flex-1 min-w-0">
+          <p className="text-slate-600 dark:text-slate-400 text-xs sm:text-sm font-medium truncate">{label}</p>
+          <p className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white mt-1 sm:mt-2">
             {typeof value === 'number' && value > 999
               ? value.toLocaleString()
               : value}
           </p>
           {trend && (
-            <p className={`text-sm mt-1 ${trend > 0 ? 'text-green-600' : 'text-red-600'}`}>
+            <p className={`text-xs sm:text-sm mt-1 ${trend > 0 ? 'text-green-600' : 'text-red-600'}`}>
               {trend > 0 ? '↑' : '↓'} {Math.abs(trend).toFixed(1)}%
             </p>
           )}
         </div>
-        <div className={`p-3 rounded-lg ${color}`}>
-          <Icon size={24} className="text-white" />
+        <div className={`p-2 sm:p-3 rounded-lg flex-shrink-0 ${color}`}>
+          <Icon size={20} className="text-white sm:block" />
         </div>
       </div>
     </div>
@@ -125,22 +125,22 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Header with Refresh */}
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Dashboard</h2>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-0">
+        <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white">Dashboard</h2>
         <button
           onClick={refetchResults}
           disabled={resultsLoading}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50"
+          className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50 text-sm sm:text-base"
         >
           <RefreshCw size={16} className={resultsLoading ? 'animate-spin' : ''} />
           {resultsLoading ? 'Refreshing...' : 'Refresh Data'}
         </button>
       </div>
 
-      {/* Status Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      {/* Status Cards - Responsive Grid */}
+      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3 md:gap-4">
         <StatusCard
           icon={Activity}
           label="Accuracy"
@@ -175,7 +175,7 @@ export default function Dashboard() {
         <Card>
           <Card.Header title="Pipeline Status" />
           <Card.Body>
-            <div className="space-y-3">
+            <div className="space-y-2 sm:space-y-3">
               {[
                 'Data Acquisition',
                 'Data Cleaning',
@@ -185,9 +185,9 @@ export default function Dashboard() {
               ].map((phase) => {
                 const status = getPipelinePhaseStatus(phase);
                 return (
-                  <div key={phase} className="flex items-center gap-3">
+                  <div key={phase} className="flex items-center gap-2 sm:gap-3 text-sm sm:text-base">
                     <div
-                      className={`w-2 h-2 rounded-full ${
+                      className={`w-2 h-2 rounded-full flex-shrink-0 ${
                         status === 'completed'
                           ? 'bg-green-500'
                           : status === 'in_progress'
@@ -195,9 +195,9 @@ export default function Dashboard() {
                             : 'bg-slate-400'
                       }`}
                     />
-                    <span className="text-slate-700 dark:text-slate-300">{phase}</span>
+                    <span className="text-slate-700 dark:text-slate-300 flex-1 truncate">{phase}</span>
                     <span
-                      className={`ml-auto text-sm font-medium ${
+                      className={`ml-auto text-sm font-medium flex-shrink-0 ${
                         status === 'completed'
                           ? 'text-green-600 dark:text-green-400'
                           : status === 'in_progress'
@@ -221,13 +221,13 @@ export default function Dashboard() {
 
       {/* Last Update */}
       {results.timestamp && (
-        <p className="text-sm text-slate-500 dark:text-slate-400">
+        <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
           Last updated: {new Date(results.timestamp).toLocaleString()}
         </p>
       )}
 
-      {/* Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* Charts - Responsive Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
         {/* Price Prediction Chart */}
         {chartData && chartData.length > 0 ? (
           <Card>

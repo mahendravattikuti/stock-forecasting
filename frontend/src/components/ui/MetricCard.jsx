@@ -34,7 +34,7 @@ export default function MetricCard({
   return (
     <div
       className={`
-        bg-slate-800 border border-slate-700 rounded-lg p-6
+        bg-slate-800 border border-slate-700 rounded-lg p-3 sm:p-4 md:p-6
         hover:border-slate-600 transition-all duration-200
         ${onClick ? 'cursor-pointer hover:shadow-md' : ''}
       `}
@@ -44,25 +44,25 @@ export default function MetricCard({
       onKeyDown={onClick ? (e) => e.key === 'Enter' && onClick() : undefined}
       title={tooltip}
     >
-      <div className="flex items-center justify-between">
-        <div className="flex-1">
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex-1 min-w-0">
           {/* Label */}
-          <p className="text-slate-400 text-sm font-medium">{label}</p>
+          <p className="text-slate-400 text-xs sm:text-sm font-medium truncate">{label}</p>
 
           {/* Value */}
           {loading ? (
-            <div className="mt-2 h-8 bg-slate-700 rounded animate-pulse" />
+            <div className="mt-1 sm:mt-2 h-6 sm:h-8 bg-slate-700 rounded animate-pulse" />
           ) : (
-            <div className="flex items-baseline gap-2 mt-2">
-              <p className="text-3xl font-bold text-white">{value}</p>
-              {unit && <p className="text-slate-400 text-sm font-medium">{unit}</p>}
+            <div className="flex items-baseline gap-1 sm:gap-2 mt-1 sm:mt-2 min-w-0">
+              <p className="text-xl sm:text-2xl md:text-3xl font-bold text-white truncate">{value}</p>
+              {unit && <p className="text-slate-400 text-xs sm:text-sm font-medium flex-shrink-0">{unit}</p>}
             </div>
           )}
 
           {/* Trend Indicator */}
           {trend && trendValue !== null && !loading && (
-            <div className={`flex items-center gap-1 mt-2 ${trendColorMap[trend]}`}>
-              <span className="text-sm font-medium">
+            <div className={`flex items-center gap-1 mt-1 sm:mt-2 ${trendColorMap[trend]} text-xs sm:text-sm`}>
+              <span className="font-medium">
                 {trend === 'up' ? '↑' : '↓'} {trendValue}
               </span>
             </div>
@@ -71,8 +71,8 @@ export default function MetricCard({
 
         {/* Icon */}
         {!loading && Icon && (
-          <div className={`p-3 rounded-lg ${colorMap[color]}`}>
-            <Icon size={24} />
+          <div className={`p-2 sm:p-3 rounded-lg flex-shrink-0 ${colorMap[color]}`}>
+            <Icon size={16} className="sm:block" />
           </div>
         )}
       </div>
@@ -89,13 +89,13 @@ export default function MetricCard({
 export function MetricGrid({ metrics, loading = false, columns = 4 }) {
   const colClass = {
     1: 'grid-cols-1',
-    2: 'grid-cols-1 md:grid-cols-2',
-    3: 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3',
-    4: 'grid-cols-1 md:grid-cols-2 lg:grid-cols-4',
+    2: 'grid-cols-1 sm:grid-cols-2',
+    3: 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3',
+    4: 'grid-cols-2 md:grid-cols-2 lg:grid-cols-4',
   };
 
   return (
-    <div className={`grid ${colClass[columns]} gap-4`}>
+    <div className={`grid ${colClass[columns]} gap-2 sm:gap-3 md:gap-4`}>
       {metrics.map((metric, idx) => (
         <MetricCard key={idx} {...metric} loading={loading} />
       ))}
